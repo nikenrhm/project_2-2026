@@ -6,5 +6,16 @@ use Illuminate\Database\Eloquent\Model;
 
 class Banner extends Model
 {
-    protected $guarded = ['id'];
+    protected $fillable = [
+        'title',
+        'subtitle',
+        'image',
+        'button_text',
+        'button_link',
+        'is_active',
+    ];
+
+    protected $casts = [
+        'is_active' => 'boolean',
+    ];
 }

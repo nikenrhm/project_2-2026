@@ -6,5 +6,15 @@ use Illuminate\Database\Eloquent\Model;
 
 class SpecialRequest extends Model
 {
-    protected $guarded = ['id'];
+    protected $fillable = [
+        'full_name',
+        'email',
+        'phone',
+        'brand',
+        'model',
+        'year',
+        'budget',
+        'description',
+        'status',
+    ];
 }

@@ -3,8 +3,17 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ServiceType extends Model
 {
-    protected $guarded = ['id'];
+    protected $fillable = [
+        'name',
+        'description',
+    ];
+
+    public function appointments(): HasMany
+    {
+        return $this->hasMany(ServiceAppointment::class);
+    }
 }

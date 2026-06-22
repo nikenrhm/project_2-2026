@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Models\User;
 use App\Policies\ActivityPolicy;
 use Filament\Actions\MountableAction;
 use Filament\Notifications\Livewire\Notifications;
@@ -29,16 +30,45 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        /*
+        |--------------------------------------------------------------------------
+        | Super Admin Authorization
+        |--------------------------------------------------------------------------
+        | Jika user punya role super_admin, maka user otomatis bisa mengakses
+        | semua resource, page, action, dan policy di Filament.
+        */
+        Gate::before(function (User $user, string $ability) {
+            if ($user->hasRole('super_admin')) {
+                return true;
+            }
+
+            return null;
+        });
+
+        /*
+        |--------------------------------------------------------------------------
+        | Activity Log Policy
+        |--------------------------------------------------------------------------
+        */
         Gate::policy(Activity::class, ActivityPolicy::class);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Filament UI Configuration
+        |--------------------------------------------------------------------------
+        */
         Page::formActionsAlignment(Alignment::Right);
+
         Notifications::alignment(Alignment::End);
         Notifications::verticalAlignment(VerticalAlignment::End);
+
         Page::$reportValidationErrorUsing = function (ValidationException $exception) {
             Notification::make()
                 ->title($exception->getMessage())
                 ->danger()
                 ->send();
         };
+
         MountableAction::configureUsing(function (MountableAction $action) {
             $action->modalFooterActionsAlignment(Alignment::Right);
         });

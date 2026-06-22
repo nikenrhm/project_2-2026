@@ -7,10 +7,13 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class CarBrand extends Model
 {
-    protected $guarded = ['id'];
+    protected $fillable = [
+        'name',
+        'logo',
+    ];
 
     public function cars(): HasMany
     {
-        return $this->hasMany(Car::class);
+        return $this->hasMany(Car::class, 'car_brand_id');
     }
 }
