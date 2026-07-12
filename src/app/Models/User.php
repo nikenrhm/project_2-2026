@@ -7,12 +7,14 @@ use Filament\Panel;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable implements FilamentUser
 {
     use Notifiable;
     use HasRoles;
-
+    use HasApiTokens;
+    
     protected $fillable = [
         'name',
         'email',

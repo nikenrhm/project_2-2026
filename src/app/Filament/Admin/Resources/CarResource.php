@@ -6,7 +6,6 @@ use App\Filament\Admin\Resources\CarResource\Pages;
 use App\Models\Car;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Forms\Set;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -18,22 +17,20 @@ class CarResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-truck';
 
+    protected static ?string $navigationGroup = 'Vehicle Management';
+
     protected static ?string $navigationLabel = 'Cars';
 
     protected static ?string $modelLabel = 'Car';
 
     protected static ?string $pluralModelLabel = 'Cars';
 
-    protected static ?string $navigationGroup = 'Inventory';
-
-    protected static ?int $navigationSort = 2;
-
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('Car Information')
-                    ->description('Main vehicle information displayed on the public website.')
+                Forms\Components\Section::make('Vehicle Identity')
+                    ->description('Data utama kendaraan yang ditampilkan pada katalog dan halaman detail.')
                     ->schema([
                         Forms\Components\Select::make('car_brand_id')
                             ->label('Brand')
@@ -44,23 +41,20 @@ class CarResource extends Resource
 
                         Forms\Components\TextInput::make('name')
                             ->label('Car Name')
+                            ->placeholder('Example: Mercedes Benz AMG GT Black Series')
                             ->required()
                             ->maxLength(255)
                             ->live(onBlur: true)
-                            ->afterStateUpdated(function (Set $set, ?string $state): void {
-                                if (!$state) {
-                                    return;
+                            ->afterStateUpdated(function (?string $state, Forms\Set $set) {
+                                if ($state) {
+                                    $set('slug', Str::slug($state));
                                 }
-
-                                $set('slug', Str::slug($state));
                             }),
 
                         Forms\Components\TextInput::make('slug')
                             ->label('Slug')
-                            ->required()
-                            ->maxLength(255)
-                            ->unique(ignoreRecord: true)
-                            ->helperText('Slug digunakan untuk URL detail mobil. Contoh: ferrari-sf90-spider'),
+                            ->disabled()
+                            ->dehydrated(false),
 
                         Forms\Components\Select::make('type')
                             ->label('Car Type')
@@ -68,77 +62,7 @@ class CarResource extends Resource
                                 'new' => 'New Car',
                                 'used' => 'Used Car',
                             ])
-                            ->native(false)
                             ->required(),
-
-                        Forms\Components\TextInput::make('year')
-                            ->label('Year')
-                            ->numeric()
-                            ->minValue(1900)
-                            ->maxValue((int) date('Y') + 1)
-                            ->required(),
-
-                        Forms\Components\TextInput::make('price')
-                            ->label('Price')
-                            ->numeric()
-                            ->prefix('Rp')
-                            ->required(),
-
-                        Forms\Components\TextInput::make('mileage')
-                            ->label('Mileage')
-                            ->numeric()
-                            ->suffix('KM')
-                            ->helperText('Kosongkan atau isi 0 untuk mobil baru.'),
-
-                        Forms\Components\Select::make('transmission')
-                            ->label('Transmission')
-                            ->options([
-                                'Manual' => 'Manual',
-                                'Automatic' => 'Automatic',
-                                'CVT' => 'CVT',
-                            ])
-                            ->native(false),
-
-                        Forms\Components\TextInput::make('fuel_type')
-                            ->label('Fuel Type')
-                            ->maxLength(255)
-                            ->placeholder('Petrol, Hybrid, Electric'),
-
-                        Forms\Components\TextInput::make('color')
-                            ->label('Color')
-                            ->maxLength(255)
-                            ->placeholder('Red, White, Black, Ruby Star Neo'),
-                    ])
-                    ->columns(2),
-
-                Forms\Components\Section::make('Media')
-                    ->description('Upload gambar mobil untuk ditampilkan di website.')
-                    ->schema([
-                        Forms\Components\FileUpload::make('thumbnail')
-                            ->label('Thumbnail')
-                            ->image()
-                            ->disk('public')
-                            ->directory('cars')
-                            ->visibility('public')
-                            ->acceptedFileTypes([
-                                'image/jpeg',
-                                'image/png',
-                                'image/webp',
-                            ])
-                            ->maxSize(5120)
-                            ->imagePreviewHeight('180')
-                            ->downloadable()
-                            ->openable()
-                            ->helperText('Maksimal 5 MB. Format: JPG, PNG, atau WEBP.'),
-                    ]),
-
-                Forms\Components\Section::make('Status & Display')
-                    ->description('Atur status mobil dan apakah mobil tampil di Featured Fleet.')
-                    ->schema([
-                        Forms\Components\Toggle::make('is_featured')
-                            ->label('Featured Car')
-                            ->helperText('Aktifkan jika mobil ingin ditampilkan di bagian Featured Fleet.')
-                            ->default(false),
 
                         Forms\Components\Select::make('status')
                             ->label('Status')
@@ -146,17 +70,97 @@ class CarResource extends Resource
                                 'available' => 'Available',
                                 'sold' => 'Sold',
                             ])
-                            ->native(false)
                             ->default('available')
                             ->required(),
                     ])
                     ->columns(2),
 
-                Forms\Components\Section::make('Description')
+                Forms\Components\Section::make('Price & Specifications')
+                    ->description('Input spesifikasi kendaraan seperti contoh: YEAR, KM, ENGINE, COLOR.')
                     ->schema([
-                        Forms\Components\RichEditor::make('description')
+                        Forms\Components\TextInput::make('price')
+                            ->label('Price')
+                            ->numeric()
+                            ->prefix('Rp')
+                            ->placeholder('9500000000')
+                            ->required(),
+
+                        Forms\Components\TextInput::make('year')
+                            ->label('Year')
+                            ->numeric()
+                            ->placeholder('2023')
+                            ->required(),
+
+                        Forms\Components\TextInput::make('mileage')
+                            ->label('KM')
+                            ->numeric()
+                            ->placeholder('1492')
+                            ->helperText('Isi kilometer kendaraan. Contoh: 1492'),
+
+                        Forms\Components\TextInput::make('fuel_type')
+                            ->label('Engine')
+                            ->placeholder('Example: 4.0L AMG V8 biturbo')
+                            ->helperText('Kolom ini dipakai sebagai Engine pada halaman detail.'),
+
+                        Forms\Components\TextInput::make('color')
+                            ->label('Color')
+                            ->placeholder('Example: Orange Magma'),
+
+
+                    ])
+                    ->columns(2),
+
+                Forms\Components\Section::make('Media')
+                    ->description('Upload gambar mobil untuk ditampilkan pada katalog dan halaman detail.')
+                    ->schema([
+                        Forms\Components\FileUpload::make('thumbnail')
+                            ->label('Thumbnail')
+                            ->image()
+                            ->directory('cars')
+                            ->visibility('public')
+                            ->maxSize(5120)
+                            ->acceptedFileTypes([
+                                'image/jpeg',
+                                'image/png',
+                                'image/webp',
+                            ])
+                            ->helperText('Maksimal 5 MB. Format: JPG, PNG, atau WEBP.'),
+                    ])
+                    ->columns(1),
+
+                Forms\Components\Section::make('Descriptions')
+                    ->description('Isi deskripsi dengan format seperti contoh: informasi mobil, performance, acceleration, dan detail lain.')
+                    ->schema([
+                        Forms\Components\Textarea::make('description')
                             ->label('Description')
+                            ->rows(16)
+                            ->placeholder(
+                                "Mercedes Benz AMG GT Black Series\n\n" .
+                                "Year : 2023\n" .
+                                "Exterior : Orange Magma\n" .
+                                "Interior : Black Alcantara\n" .
+                                "Kilometer : 1492\n\n" .
+                                "Performance\n" .
+                                "Engine : 4.0L AMG V8 biturbo\n" .
+                                "Power : 720 HP\n" .
+                                "Torque : 800 Nm\n" .
+                                "Transmission : 7-speed AMG SPEEDSHIFT DCT dual-clutch rear-mounted transaxle\n" .
+                                "Layout : Rear wheel drive\n\n" .
+                                "Acceleration\n" .
+                                "0-100 Km/h : 3.2 Secs\n" .
+                                "Max Speed : 325 Km/h"
+                            )
+                            ->helperText('Gunakan format baris seperti contoh agar tampil rapi di halaman detail.')
                             ->columnSpanFull(),
+                    ]),
+
+                Forms\Components\Section::make('Display Settings')
+                    ->description('Atur apakah mobil tampil pada Featured Collection di halaman utama.')
+                    ->schema([
+                        Forms\Components\Toggle::make('is_featured')
+                            ->label('Featured Car')
+                            ->default(false)
+                            ->helperText('Aktifkan jika mobil ingin tampil di bagian Featured Collection.'),
                     ]),
             ]);
     }
@@ -167,9 +171,7 @@ class CarResource extends Resource
             ->columns([
                 Tables\Columns\ImageColumn::make('thumbnail')
                     ->label('Image')
-                    ->disk('public')
-                    ->square()
-                    ->size(64),
+                    ->square(),
 
                 Tables\Columns\TextColumn::make('brand.name')
                     ->label('Brand')
@@ -179,78 +181,53 @@ class CarResource extends Resource
                 Tables\Columns\TextColumn::make('name')
                     ->label('Car Name')
                     ->searchable()
-                    ->sortable()
-                    ->limit(35),
+                    ->sortable(),
 
                 Tables\Columns\TextColumn::make('type')
                     ->label('Type')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'new' => 'success',
-                        'used' => 'warning',
-                        default => 'gray',
-                    })
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'new' => 'New Car',
-                        'used' => 'Used Car',
-                        default => ucfirst($state),
-                    }),
+                    ->sortable(),
 
                 Tables\Columns\TextColumn::make('year')
                     ->label('Year')
                     ->sortable(),
+
+                Tables\Columns\TextColumn::make('mileage')
+                    ->label('KM')
+                    ->numeric()
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('fuel_type')
+                    ->label('Engine')
+                    ->limit(30)
+                    ->searchable(),
+
+                Tables\Columns\TextColumn::make('color')
+                    ->label('Color')
+                    ->searchable(),
 
                 Tables\Columns\TextColumn::make('price')
                     ->label('Price')
                     ->money('IDR')
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('mileage')
-                    ->label('Mileage')
-                    ->suffix(' KM')
-                    ->sortable()
-                    ->toggleable(),
-
-                Tables\Columns\TextColumn::make('transmission')
-                    ->label('Transmission')
-                    ->toggleable(),
-
-                Tables\Columns\TextColumn::make('fuel_type')
-                    ->label('Fuel')
-                    ->toggleable(),
-
-                Tables\Columns\TextColumn::make('color')
-                    ->label('Color')
-                    ->toggleable(),
-
                 Tables\Columns\IconColumn::make('is_featured')
                     ->label('Featured')
-                    ->boolean()
-                    ->sortable(),
+                    ->boolean(),
 
                 Tables\Columns\TextColumn::make('status')
                     ->label('Status')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'available' => 'success',
-                        'sold' => 'danger',
-                        default => 'gray',
-                    })
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'available' => 'Available',
-                        'sold' => 'Sold',
-                        default => ucfirst($state),
-                    }),
+                    ->sortable(),
 
                 Tables\Columns\TextColumn::make('created_at')
-                    ->label('Created')
+                    ->label('Created At')
                     ->dateTime('d M Y')
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->sortable(),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('type')
-                    ->label('Car Type')
+                    ->label('Type')
                     ->options([
                         'new' => 'New Car',
                         'used' => 'Used Car',
@@ -264,7 +241,7 @@ class CarResource extends Resource
                     ]),
 
                 Tables\Filters\TernaryFilter::make('is_featured')
-                    ->label('Featured Cars'),
+                    ->label('Featured'),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
@@ -280,9 +257,7 @@ class CarResource extends Resource
 
     public static function getRelations(): array
     {
-        return [
-            //
-        ];
+        return [];
     }
 
     public static function getPages(): array
