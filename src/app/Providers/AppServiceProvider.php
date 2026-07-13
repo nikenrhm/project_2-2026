@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\ValidationException;
 use Spatie\Activitylog\Models\Activity;
+use Illuminate\Support\Facades\URL;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -37,10 +38,10 @@ class AppServiceProvider extends ServiceProvider
         | Jika user punya role super_admin, maka user otomatis bisa mengakses
         | semua resource, page, action, dan policy di Filament.
         */
-        Gate::before(function (User $user, string $ability) {
-            if ($user->hasRole('super_admin')) {
-                return true;
-            }
+        if ($this->app->environment('production')) {
+            URL::forceRootUrl(config('app.url'));
+            URL::forceScheme('https');
+        }
 
             return null;
         });
